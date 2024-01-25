@@ -405,3 +405,67 @@ class GaussianModel:
     def add_densification_stats(self, viewspace_point_tensor, update_filter):
         self.xyz_gradient_accum[update_filter] += torch.norm(viewspace_point_tensor.grad[update_filter,:2], dim=-1, keepdim=True)
         self.denom[update_filter] += 1
+
+    #def add1():
+     #   a=1+1
+
+
+
+    def add_ply(self,path,path1,path2):
+        #self2=self
+        mkdir_p(os.path.dirname(path))
+        self.load_ply(path1)
+        #self.load_ply(self,path1)
+        # self.gaussians.load_ply(self,path1)
+        xyz1 = self._xyz.detach().cpu().numpy()
+        f_dc1 = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        f_rest1 = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        opacities1 = self._opacity.detach().cpu().numpy()
+        scale1= self._scaling.detach().cpu().numpy()
+        rotation1= self._rotation.detach().cpu().numpy()
+
+        self.load_ply(path2)
+        xyz2 = self._xyz.detach().cpu().numpy()
+        f_dc2 = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        f_rest2 = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        opacities2 = self._opacity.detach().cpu().numpy()
+        scale2 = self._scaling.detach().cpu().numpy()
+        rotation2 = self._rotation.detach().cpu().numpy()
+
+        #xyz = xyz1+xyz2
+        #xyz = np.concatenate((xyz1, xyz2), axis=1)
+        xyz = np.concatenate((xyz1, xyz2), axis=0)
+        normals = np.zeros_like(xyz)
+        f_dc=np.concatenate((f_dc1, f_dc2), axis=0)
+        f_rest=np.concatenate((f_rest1, f_rest2), axis=0)
+        opacities=np.concatenate((opacities1, opacities2), axis=0)
+        scale=np.concatenate((scale1, scale2), axis=0)
+        rotation=np.concatenate((rotation1, rotation2), axis=0)
+
+        '''
+        self._xyz = nn.Parameter(torch.tensor(xyz, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._features_dc = nn.Parameter(torch.tensor(features_dc, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(True))
+        self._features_rest = nn.Parameter(torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(True))
+        self._opacity = nn.Parameter(torch.tensor(opacities, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._scaling = nn.Parameter(torch.tensor(scales, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
+        '''
+        dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
+
+        elements = np.empty(xyz.shape[0], dtype=dtype_full)
+        attributes = np.concatenate((xyz, normals, f_dc, f_rest, opacities, scale, rotation), axis=1)
+        elements[:] = list(map(tuple, attributes))
+        el = PlyElement.describe(elements, 'vertex')
+        PlyData([el]).write(path)
+        print('finish')
+    #cuijianzhu
+
+    '''
+    #cuijianzhu
+    self.gaussians.load_ply(os.path.join(self.model_path,
+                                         "point_cloud",
+                                         "iteration_" + str(self.loaded_iter),
+                                         "point_cloud.ply"))
+
+    self.gaussians.save_ply(os.path.join(point_cloud_path, "point_cloud.ply"))
+    '''
