@@ -1,14 +1,3 @@
-#
-# Copyright (C) 2023, Inria
-# GRAPHDECO research group, https://team.inria.fr/graphdeco
-# All rights reserved.
-#
-# This software is free for non-commercial, research and evaluation use 
-# under the terms of the LICENSE.md file.
-#
-# For inquiries contact  george.drettakis@inria.fr
-#
-
 import os
 import random
 import json
@@ -17,6 +6,10 @@ from scene.dataset_readers import sceneLoadTypeCallbacks
 from scene.gaussian_model import GaussianModel
 from arguments import ModelParams
 from utils.camera_utils import cameraList_from_camInfos, camera_to_JSON
+from utils.system_utils import mkdir_p
+from plyfile import PlyData,PlyElement
+import numpy as np
+
 
 class Scene:
 
@@ -84,7 +77,75 @@ class Scene:
 
     def save(self, iteration):
         point_cloud_path = os.path.join(self.model_path, "point_cloud/iteration_{}".format(iteration))
-        self.gaussians.save_ply(os.path.join(point_cloud_path, "point_cloud.ply"))
+
+        #2024.2.1       
+        # xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
+        #                 np.asarray(plydata.elements[0]["y"]),
+        #                 np.asarray(plydata.elements[0]["z"])),  axis=1)
+        inputply = os.path.join(self.model_path, "input.ply")
+        print(inputply)
+        plydata=PlyData.read(inputply)
+        vertices = plydata['vertex']
+        positions = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
+        x_min = np.min(positions[:, 0])
+        x_max = np.max(positions[:, 0])
+        y_min = np.min(positions[:, 1])
+        y_max = np.max(positions[:, 1])
+        z_min = np.min(positions[:, 2])
+        z_max = np.max(positions[:, 2])
+        #self.gaussians.save_ply(os.path.join(point_cloud_path, "point_cloud.ply"))
+        path = os.path.join(point_cloud_path, "point_cloud.ply")
+        mkdir_p(os.path.dirname(path))
+
+        # Initialize an empty list to store the valid points
+        valid_xyz = []
+        valid_normals = []
+        valid_f_dc = []
+        valid_f_rest = []
+        valid_opacities = []
+        valid_scale = []
+        valid_rotation = []
+
+        xyz = self.gaussians._xyz.detach().cpu().numpy()   
+        normals = np.zeros_like(xyz)
+        f_dc = self.gaussians._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        f_rest = self.gaussians._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
+        opacities = self.gaussians._opacity.detach().cpu().numpy()
+        scale = self.gaussians._scaling.detach().cpu().numpy()
+        rotation = self.gaussians._rotation.detach().cpu().numpy()
+        print(xyz.shape)
+        # Iterate over the rows in xyz
+        for i in range(xyz.shape[0]):
+            # Get the x, y, z coordinates of the point
+            x, y, z = xyz[i]
+            # Check if the point is inside the bounding box
+            if x_min <= x <= x_max and y_min <= y <= y_max and z_min <= z <= z_max:
+                # If it is, add it and its corresponding attributes to the list of valid points
+                valid_xyz.append([x, y, z])
+                valid_normals.append(normals[i])
+                valid_f_dc.append(f_dc[i])
+                valid_f_rest.append(f_rest[i])
+                valid_opacities.append(opacities[i])
+                valid_scale.append(scale[i])
+                valid_rotation.append(rotation[i])
+
+        # Convert the lists back to numpy arrays
+        xyz = np.array(valid_xyz)
+        normals = np.array(valid_normals)
+        f_dc = np.array(valid_f_dc)
+        f_rest = np.array(valid_f_rest)
+        opacities = np.array(valid_opacities)
+        scale = np.array(valid_scale)
+        rotation = np.array(valid_rotation)
+        dtype_full = [(attribute, 'f4') for attribute in self.gaussians.construct_list_of_attributes()]
+        elements = np.empty(xyz.shape[0], dtype=dtype_full)
+        attributes = np.concatenate((xyz, normals, f_dc, f_rest, opacities, scale, rotation), axis=1)
+        elements[:] = list(map(tuple, attributes))
+        el = PlyElement.describe(elements, 'vertex')
+        PlyData([el]).write(path)
+
+
+
 
     def getTrainCameras(self, scale=1.0):
         return self.train_cameras[scale]
