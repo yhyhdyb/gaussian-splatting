@@ -1,26 +1,7 @@
 # 3D Gaussian Splatting for Real-Time Radiance Field Rendering
+vast gaussian splatting idea  https://vastgaussian.github.io
 
 
-<a href="https://www.inria.fr/"><img height="100" src="assets/logo_inria.png"> </a>
-<a href="https://univ-cotedazur.eu/"><img height="100" src="assets/logo_uca.png"> </a>
-<a href="https://www.mpi-inf.mpg.de"><img height="100" src="assets/logo_mpi.png"> </a> 
-<a href="https://team.inria.fr/graphdeco/"> <img style="width:100%;" src="assets/logo_graphdeco.png"></a>
-
-
-
-
-
-## Funding and Acknowledgments
-
-This research was funded by the ERC Advanced grant FUNGRAPH No 788065. The authors are grateful to Adobe for generous donations, the OPAL infrastructure from Université Côte d’Azur and for the HPC resources from GENCI–IDRIS (Grant 2022-AD011013409). The authors thank the anonymous reviewers for their valuable feedback, P. Hedman and A. Tewari for proofreading earlier drafts also T. Müller, A. Yu and S. Fridovich-Keil for helping with the comparisons.
-
-## Step-by-step Tutorial
-
-Jonathan Stephens made a fantastic step-by-step tutorial for setting up Gaussian Splatting on your machine, along with instructions for creating usable datasets from videos. If the instructions below are too dry for you, go ahead and check it out [here](https://www.youtube.com/watch?v=UXtuigy_wYc).
-
-## Colab
-
-User [camenduru](https://github.com/camenduru) was kind enough to provide a Colab template that uses this repo's source (status: August 2023!) for quick and easy access to the method. Please check it out [here](https://github.com/camenduru/gaussian-splatting-colab).
 
 ## Cloning the Repository
 
